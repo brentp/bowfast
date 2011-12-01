@@ -1,14 +1,21 @@
+=======
 Bowfast
 =======
 Run bowtie, then BFAST on single-end colorspace reads and get
-a single BAM file like:
+a single BAM file.
+
+Example
+=======
+
+::
 
    bowfast -f hg19.fa -p output_prefix input.csfasta input.qual
 
-The output will be `output_prefix.calmd.bam` which has samtools
-calmd -E adjusted qualities.
+Will create `output_prefix.calmd.bam` which has samtools
+calmd -E adjusted qualities of the merged output from bowtie and
+BFAST
 
-Run ./bowfast with no options to see full help.
+ + Run ./bowfast with no options to see full help.
 
 Pipeline
 ========
@@ -26,23 +33,17 @@ The alignments from bowtie are given fake mapping quality scores
 based on the number of mismatches (it's completely ad-hoc, but is
 tuned so that it seems to give the ability to filter).
 
-Example
-=======
-
-This command will create final output of 'output/prefix.calmd.bam':
-
-    bowfast -f hg19.fasta -p output/prefix -t 8 some.csfasta some.qual
-
 
 Options
 =======
+::
 
      -f reference fasta file.                            [required]
      -p output prefix for all files. e.g. 'data/sample1' [required]
      -t number of threads.                               [default: 8]
-     -a option to BFAST 2: keep only uniquely mapped reads.
-                        3: choose the best scoring alignment.
-        2 is more stringent.                             [default: 3]
+     -a option to BFAST                                  [default: 3]
+        2 - keep only uniquely mapped reads (most stringent)
+        3 - choose the best scoring alignment.
 
 Installation
 ============
