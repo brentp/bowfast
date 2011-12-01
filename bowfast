@@ -12,6 +12,7 @@ HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 PATH=$PATH:$HERE/lib/samtools/:$HERE/lib/sickle/:$HERE/lib/bfast/bfast:$HERE/lib/bfast/scripts/
 PATH=$PATH:$HERE/lib/bowtie-0.12.7:/vol2/home/brentp/src/bio-playground/solidstuff/ 
+export LC_ALL=C
 
 THREADS=8
 BFAST_A=3
@@ -103,20 +104,31 @@ bowtie -f -C -Q $QUALS --chunkmbs 1025 --sam \
     $CSFASTA \
     | awk 'BEGIN{OFS=FS="\t"}
            { if($0 ~ /^@/){ print $0 } else {
-               if ($0 ~/NM:i:1/){ $5 -= 3 }
-               if ($0 ~/XA:i:1/){ $5 -= 3 }
-               if ($0 ~/NM:i:1/){ $5 -= 6 }
-               if ($0 ~/CM:i:1/){ $5 -= 2 }
-               if ($0 ~/CM:i:2/){ $5 -= 6 }
                if ($0 ~/CM:i:0/ && $0 ~ /NM:i:0/){ $5 += 10 }
+               else {
+                   if ($0 ~/NM:i:1/){ $5 -= 3 }
+                   if ($0 ~/XA:i:1/){ $5 -= 3 }
+                   if ($0 ~/NM:i:1/){ $5 -= 6 }
+                   if ($0 ~/CM:i:1/){ $5 -= 2 }
+                   if ($0 ~/CM:i:2/){ $5 -= 6 }
+                   if ($0 ~/CM:i:3/){ $5 -= 9 }
+                   if ($0 ~/CM:i:4/){ $5 -= 12 }
+                   if ($0 ~/CM:i:5/){ $5 -= 15 }
+                   if ($0 ~/CM:i:6/){ $5 -= 18 }
+                   if ($0 ~/CM:i:7/){ $5 -= 20 }
+                   if ($0 ~/CM:i:8/){ $5 -= 22 }
+                   if ($0 ~/CM:i:9/){ $5 -= 24 }
+                   if ($0 ~ /CM:i:1[^\t]/){ $5 = 1 }
+                   if ($5 < 0){ $5 = 0; }
+               }
                print $0
               }
            }' \
     | samtools view -F 4 -bS - > ${PREFIX}.bowtie.unsorted.bam
 
 # convert to fastq
-solid2fastq ${PREFIX}.bowtie.un ${PREFIX}.bowtie.un.qual \
-    > ${PREFIX}.fastq
+#solid2fastq ${PREFIX}.bowtie.un ${PREFIX}.bowtie.un.qual \
+#    > ${PREFIX}.fastq
 # trim with sickle
 #sickle se -f ${PREFIX}.fastq -t illumina -q 12 -l 26 -x \
 #    -o ${PREFIX}.bfastq
@@ -131,12 +143,14 @@ solid-trimmer.py \
 bfast match -f $FASTA -A 1 -r $PREFIX.bfastq -M 512 -K 8 -n $THREADS > $PREFIX.bmf
 bfast localalign -f $FASTA -A 1 -n $THREADS -m $PREFIX.bmf > $PREFIX.baf
 
-bfast postprocess -f $FASTA -A 1 -i $PREFIX.baf -a $BFAST_A -n $THREADS -O 1 \
+bfast postprocess -q 15 -f $FASTA -A 1 -i $PREFIX.baf -a $BFAST_A -n $THREADS -O 1 \
     -m 15 -q 9 -b 3 \
     | samtools view -F 4 -bS - > $PREFIX.bfast.unsorted.bam
 
 for T in bowtie bfast; do
-    samtools sort ${PREFIX}.${T}.unsorted.bam ${PREFIX}.${T}
+    # sort and then remove the unsorted bam.
+    samtools sort ${PREFIX}.${T}.unsorted.bam ${PREFIX}.${T} \
+        && rm ${PREFIX}.${T}.unsorted.bam
 done
 
 # samtools merge.
