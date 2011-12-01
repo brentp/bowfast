@@ -8,7 +8,8 @@
 set -e
 set -o pipefail
 
-PATH=$PATH:./lib/samtools/:./lib/sickle/:./lib/bfast/bfast
+PATH=$PATH:./lib/samtools/:./lib/sickle/:./lib/bfast/bfast:./lib/bfast/scripts/
+PATH=$PATH:./lib/bowtie-0.12.7:/vol2/home/brentp/src/bio-playground/solidstuff/ 
 
 THREADS=8
 BFAST_A=3
@@ -33,9 +34,9 @@ Options:
      -f reference fasta file.                            [required]
      -p output prefix for all files. e.g. 'data/sample1' [required]
      -t number of threads.                               [default: $THREADS]
-     -a option to BFAST 2: keep only uniquely mapped reads.
-                        3: choose the best scoring alignment.
-        2 is more stringent.                             [default: $BFAST_A]
+     -a option to BFAST                                  [default: $BFAST_A]
+        2 - keep only uniquely mapped reads (most stringent)
+        3 - choose the best scoring alignment.
 
 Note: this assumes that samtools, bowtie, and BFAST are on your path
       and that indexes for bowtie and BFAST have been created.
@@ -111,10 +112,18 @@ bowtie -f -C -Q $QUALS --chunkmbs 1025 --sam \
            }' \
     | samtools view -F 4 -bS - > ${PREFIX}.bowtie.unsorted.bam
 
-solid-trimmer.py \
-    -c ${PREFIX}.bowtie.un \
-    -q ${PREFIX}.bowtie.un.qual \
-    --moving-average 7:11 --min-qual 10 --min-read-length 28 > $PREFIX.bfastq
+# convert to fastq
+solid2fastq ${PREFIX}.bowtie.un ${PREFIX}.bowtie.un.qual \
+    > ${PREFIX}.bfastq
+# trim with sickle
+#sickle se -f ${PREFIX}.fastq -t illumina -q 12 -l 26 -x \
+#    -o ${PREFIX}.bfastq
+
+#solid-trimmer.py \
+#        -c ${PREFIX}.bowtie.un \
+#        -q ${PREFIX}.bowtie.un.qual \
+#        --moving-average 7:11 --min-qual 10 --min-read-length 28 \
+#    > $PREFIX.bfastq
 
 # run those on bfast
 bfast match -f $FASTA -A 1 -r $PREFIX.bfastq -M 512 -K 8 -n $THREADS > $PREFIX.bmf
@@ -128,7 +137,7 @@ for T in bowtie bfast; do
     samtools sort ${PREFIX}.${T}.unsorted.bam ${PREFIX}.${T}
 done
 
-# TODO samtools merge.
+# samtools merge.
 samtools view -H ${PREFIX}.bfast.bam  > ${PREFIX}.header
 samtools merge -h ${PREFIX}.header -f ${PREFIX}.merge.bam \
     ${PREFIX}.bowtie.bam ${PREFIX}.bfast.bam
