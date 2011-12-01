@@ -1,0 +1,9 @@
+[submodule "lib/bfast"]
+	path = lib/bfast
+	url = git://github.com/nh13/BFAST.git
+[submodule "lib/samtools"]
+	path = lib/samtools
+	url = git://github.com/lh3/samtools.git
+[submodule "lib/sickle"]
+	path = lib/sickle
+	url = git://github.com/najoshi/sickle.git

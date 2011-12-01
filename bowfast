@@ -1,0 +1,138 @@
+#!/bin/bash
+#BSUB -J bowfast
+#BSUB -o logs/bowfast.%J.out
+#BSUB -e logs/bowfast.%J.err
+#BSUB -R "rusage[mem=19500]"
+#BSUB -n 12
+
+set -e
+set -o pipefail
+
+PATH=$PATH:./lib/samtools/:./lib/sickle/:./lib/bfast/bfast
+
+THREADS=8
+BFAST_A=3
+
+HELP="
+`basename $0`: automate mapping single-end colorspace reads with this pipeline:
+
+    1) run bowtie with conservative parameters to map high-quality reads
+       quickly and discard reads that map to multiple locations
+    2) quality trim reads that are unmapped by bowtie
+    3) map trimmed reads with BFAST
+    4) sort and merge bowtie and BFAST outputs
+    5) index and run samtools calmd -E on merged file.
+  
+This command will create final output of 'output/prefix.calmd.bam':
+
+    `basename $0` -f hg19.fasta -p output/prefix -t 8 some.csfasta some.qual
+
+
+Options:
+
+     -f reference fasta file.                            [required]
+     -p output prefix for all files. e.g. 'data/sample1' [required]
+     -t number of threads.                               [default: $THREADS]
+     -a option to BFAST 2: keep only uniquely mapped reads.
+                        3: choose the best scoring alignment.
+        2 is more stringent.                             [default: $BFAST_A]
+
+Note: this assumes that samtools, bowtie, and BFAST are on your path
+      and that indexes for bowtie and BFAST have been created.
+"
+if (! getopts "hf:p:" opt); then
+    echo "$HELP"
+    exit;
+fi
+
+while getopts "hf:t:p:a:" opt; do
+    case $opt in
+        f) FASTA=$OPTARG ;;
+        t) THREADS=$OPTARG ;;
+        p) PREFIX=$OPTARG ;;
+        a) BFAST_A=$OPTARG ;;
+        h) echo "$HELP"; exit 0;;
+
+        \?) echo "Invalid options: -$OPTARG" >&2
+            echo "$HELP"
+            exit 1 ;;
+        :) echo "Option -$OPTARG requires an arg" >&2
+            exit 1;;
+    esac
+done
+shift $((OPTIND-1)) # remove args from cmd line
+CSFASTA=$1
+QUALS=$2
+
+################################################
+#                 Index Prep                   #
+################################################
+<<ONCE_ONLY
+bowtie-build --color $FASTA $(basename $FASTA .fa)
+bfast fasta2brg -f $FASTA -A 1 # basespace
+bfast fasta2brg -f $FASTA -A 0 # colorspace
+i=0
+for mask in 1111111111111111111111 \
+             111110100111110011111111111 \
+             10111111011001100011111000111111 \
+             1111111100101111000001100011111011 \
+             111111110001111110011111111 \
+             11111011010011000011000110011111111 \
+             1111111111110011101111111 \
+             111011000011111111001111011111 \
+             1110110001011010011100101111101111 \
+             111111001000110001011100110001100011111 \
+             ; do
+    i=$((i + 1))
+    # this takes a long time. send to your queueing system.
+    bfast index -w 14 -f $FASTA -A 1 -n $THREADS -m $mask -i $i
+done
+ONCE_ONLY
+################################################
+
+# map raw reads and save unmapped.
+bowtie -f -C -Q $QUALS --chunkmbs 1025 --sam \
+    --best --strata \
+    --max ${PREFIX}.bowtie.max --un ${PREFIX}.bowtie.un \
+    --mapq 30 \
+    -n 1 --maxbts 250000 -m 1 -e 20 \
+    -p $THREADS --seed 42 $(dirname $FASTA)/$(basename $FASTA .fa) \
+    $CSFASTA \
+    | awk 'BEGIN{OFS=FS="\t"}
+           { if($0 ~ /^@/){ print $0 } else {
+               if ($0 ~/NM:i:1/){ $5 -= 3 }
+               if ($0 ~/XA:i:1/){ $5 -= 3 }
+               if ($0 ~/NM:i:1/){ $5 -= 6 }
+               if ($0 ~/CM:i:1/){ $5 -= 2 }
+               if ($0 ~/CM:i:2/){ $5 -= 6 }
+               if ($0 ~/CM:i:0/ && $0 ~ /NM:i:0/){ $5 += 10 }
+               print $0
+              }
+           }' \
+    | samtools view -F 4 -bS - > ${PREFIX}.bowtie.unsorted.bam
+
+solid-trimmer.py \
+    -c ${PREFIX}.bowtie.un \
+    -q ${PREFIX}.bowtie.un.qual \
+    --moving-average 7:11 --min-qual 10 --min-read-length 28 > $PREFIX.bfastq
+
+# run those on bfast
+bfast match -f $FASTA -A 1 -r $PREFIX.bfastq -M 512 -K 8 -n $THREADS > $PREFIX.bmf
+bfast localalign -f $FASTA -A 1 -n $THREADS -m $PREFIX.bmf > $PREFIX.baf
+
+bfast postprocess -f $FASTA -A 1 -i $PREFIX.baf -a $BFAST_A -n $THREADS -O 1 \
+    -m 15 -q 9 -b 3 \
+    | samtools view -F 4 -bS - > $PREFIX.bfast.unsorted.bam
+
+for T in bowtie bfast; do
+    samtools sort ${PREFIX}.${T}.unsorted.bam ${PREFIX}.${T}
+done
+
+# TODO samtools merge.
+samtools view -H ${PREFIX}.bfast.bam  > ${PREFIX}.header
+samtools merge -h ${PREFIX}.header -f ${PREFIX}.merge.bam \
+    ${PREFIX}.bowtie.bam ${PREFIX}.bfast.bam
+
+samtools index ${PREFIX}.merge.bam
+samtools calmd -AEbr ${PREFIX}.merge.bam $FASTA > ${PREFIX}.calmd.bam
+samtools index ${PREFIX}.calmd.bam
