@@ -8,8 +8,10 @@
 set -e
 set -o pipefail
 
-PATH=$PATH:./lib/samtools/:./lib/sickle/:./lib/bfast/bfast:./lib/bfast/scripts/
-PATH=$PATH:./lib/bowtie-0.12.7:/vol2/home/brentp/src/bio-playground/solidstuff/ 
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+PATH=$PATH:$HERE/lib/samtools/:$HERE/lib/sickle/:$HERE/lib/bfast/bfast:$HERE/lib/bfast/scripts/
+PATH=$PATH:$HERE/lib/bowtie-0.12.7:/vol2/home/brentp/src/bio-playground/solidstuff/ 
 
 THREADS=8
 BFAST_A=3
@@ -95,8 +97,8 @@ ONCE_ONLY
 bowtie -f -C -Q $QUALS --chunkmbs 1025 --sam \
     --best --strata \
     --max ${PREFIX}.bowtie.max --un ${PREFIX}.bowtie.un \
-    --mapq 30 \
-    -n 1 --maxbts 250000 -m 1 -e 20 \
+    --mapq 30 --tryhard \
+    -n 1 --maxbts 250000 -m 1 -e 30 \
     -p $THREADS --seed 42 $(dirname $FASTA)/$(basename $FASTA .fa) \
     $CSFASTA \
     | awk 'BEGIN{OFS=FS="\t"}
@@ -114,16 +116,16 @@ bowtie -f -C -Q $QUALS --chunkmbs 1025 --sam \
 
 # convert to fastq
 solid2fastq ${PREFIX}.bowtie.un ${PREFIX}.bowtie.un.qual \
-    > ${PREFIX}.bfastq
+    > ${PREFIX}.fastq
 # trim with sickle
 #sickle se -f ${PREFIX}.fastq -t illumina -q 12 -l 26 -x \
 #    -o ${PREFIX}.bfastq
 
-#solid-trimmer.py \
-#        -c ${PREFIX}.bowtie.un \
-#        -q ${PREFIX}.bowtie.un.qual \
-#        --moving-average 7:11 --min-qual 10 --min-read-length 28 \
-#    > $PREFIX.bfastq
+solid-trimmer.py \
+        -c ${PREFIX}.bowtie.un \
+        -q ${PREFIX}.bowtie.un.qual \
+        --moving-average 7:11 --min-qual 10 --min-read-length 28 \
+    > $PREFIX.bfastq
 
 # run those on bfast
 bfast match -f $FASTA -A 1 -r $PREFIX.bfastq -M 512 -K 8 -n $THREADS > $PREFIX.bmf
