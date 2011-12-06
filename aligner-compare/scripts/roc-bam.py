@@ -19,9 +19,9 @@ f_region = sys.argv[2]
 total_reads = float(int(sys.argv[3]))
 
 
-on_target = counter(nopen('| samtools view %s -L %s' % (f_bam, f_region)))
-off_target = counter(nopen('| intersectBed -abam data/shrimp-test.bam -b \
-                    data/regions.merged.bed -wa -v | samtools view - '))
+on_target = counter(nopen('| samtools view %s -L %s -F 4' % (f_bam, f_region)))
+off_target = counter(nopen('| intersectBed -abam %s -b \
+                    data/regions.merged.bed -wa -v | samtools view - -F 4' % f_bam))
 
 tot_on_target = on_target.copy()
 tot_off_target = off_target.copy()
@@ -56,4 +56,5 @@ plt.plot( 100. * off_target[250] / total_reads,
         100. * on_target[250] / total_reads, 'ro')
 plt.xlim(0, 8)
 plt.ylim(0, 80)
+plt.title(f_bam)
 plt.show()

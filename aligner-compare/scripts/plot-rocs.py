@@ -5,7 +5,9 @@ import os.path as op
 f = plt.figure()
 ax = f.add_subplot(1, 1, 1)
 
-colors = "rgbkyc"
+colors = list("rgbkycm")
+colors.append("0.75")
+colors.append("#ff3300")
 
 def plot(f, ax, color):
     xs, ys = [], []
@@ -14,7 +16,9 @@ def plot(f, ax, color):
         ys.append(float(toks[3]))
 
     aln = op.basename(f).split(".")[1]
-    ax.plot(xs, ys, color + "--o", label=aln)
+    ax.plot(xs, ys, marker="o", linestyle="--", color=color, label=aln,
+            markersize=4, linewidth=1.5,
+            mec=color)
 
 for i, f in enumerate(sys.argv[1:]):
     plot(f, ax, colors[i])
@@ -22,6 +26,6 @@ for i, f in enumerate(sys.argv[1:]):
 plt.legend()
 plt.xlim(0, 10)
 plt.ylim(0, 80)
-plt.xlabel("% reads out of target region")
-plt.ylabel("% reads in target region")
+plt.xlabel("% reads outside target region")
+plt.ylabel("% reads inside target region")
 plt.show()

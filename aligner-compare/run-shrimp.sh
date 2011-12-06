@@ -22,7 +22,7 @@ SPREFIX=$(basename $FASTA .fa).shrimp.cs
 ##    --shrimp-mode cs $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa
 
 i=0
-#<<DONE
+<<DONE
 for db in $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa; do
     i=$(($i + 1))
     rm -f logs/${i}.shrimper.out 

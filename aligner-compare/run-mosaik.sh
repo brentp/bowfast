@@ -22,15 +22,16 @@ MosaikBuild -fr $FASTA -oa $(basename $FASTA .fa).bs.msk
 MosaikJump -ia $(basename $FASTA .fa).cs.msk -out $(basename $FASTA .fa).cs.15.jmp -hs 15 -mem 4
 MosaikJump -ia $(basename $FASTA .fa).bs.msk -out $(basename $FASTA .fa).bs.15.jmp -hs 15 -mem 4
 
+BUILD
 MosaikBuild -cs -st solid -q $READS -out $OUT/$GROUP.reads.msk \
     -sam $GROUP -ds grp -id $GROUP
-BUILD
 
 # http://code.google.com/p/mosaik-aligner/wiki/ParameterSettings
 ##<<DONE
 BASE=$(dirname $FASTA)/$(basename $FASTA .fa)
 MosaikAligner -mm 4 -act 25 -bw 17 -mhp 100 -p $THREADS \
         -m unique -hs 15 \
+        -mmal \
         -rur $OUT/${GROUP}.mosaik.unaligned.fq \
         -in $OUT/$GROUP.reads.msk \
         -j ${BASE}.cs.15.jmp \
