@@ -15,7 +15,7 @@ The lines go only to about 55% on the y-axis because many reads are unmapped.
 .. image:: https://raw.github.com/brentp/bowfast/master/aligner-compare/images/solid-3.png
 
 The green line is at a mapping quality of 22, I'll use reads at or above that
-mapping quality.
+mapping quality from BFAST.
 
 Notes
 -----
