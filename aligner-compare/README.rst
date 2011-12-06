@@ -12,7 +12,7 @@ The plot below is for un-trimmed reads with mostly default paramters.
 The upper-left corner of the plot is where we want to be.
 The lines go only to about 55% on the y-axis because many reads are unmapped.
 
-.. image:: http://amc-sandbox.ucdenver.edu/~brentp/images/mapped.png
+.. image:: https://raw.github.com/brentp/bowfast/master/aligner-compare/images/solid-3.png
 
 Notes
 -----
