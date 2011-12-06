@@ -5,13 +5,13 @@
 #BSUB -R "rusage[mem=13500]"
 #BSUB -n 8
 
-GROUP=DNApool_AB
+source ./setup.sh
 
-bowtie -f -C -Q $HOME/data/muc5b/reads/${GROUP}_F3_QV.qual --chunkmbs 1025 --best --sam \
+bowtie -f -C -Q data/${GROUP}_F3_QV.qual --chunkmbs 1025 --best --sam \
                 --max data/bowtie.max --un data/bowtie.un \
                 -y \
                 --maxbts 25000 \
-                -p $THREADS --seed 42 $FASTA $HOME/data/muc5b/reads/${GROUP}_F3.csfasta | \
+                -p $THREADS --seed 42 $(dirname $FASTA)/$(basename $FASTA .fa) data/${GROUP}_F3.csfasta | \
                 samtools view -bSF 4 - > data/${GROUP}.bowtie.unsorted.bam
 
 

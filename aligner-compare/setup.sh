@@ -8,7 +8,7 @@ FASTA=$HOME/data/bfast/hg19All.fa
 GROUP=DNApool_AB
 
 PATH=$PATH:~/src/novoalign/novocraft/:~/src/novoalign/novoalignCS:~/src/bfast-git/scripts/:~/src/bfast-git/
-PATH=$PATH:~/src/bwa:/vol2/home/brentp/src/bowtie/bowtie-0.12.7/
+PATH=$PATH:~/src/bwa:/vol2/home/brentp/src/bowtie/bowtie-0.12.7/:$HOME/src/mosaik-aligner-svn/bin/
 
 OUT=data
 
