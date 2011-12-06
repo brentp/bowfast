@@ -11,21 +11,26 @@ colors.append("#ff3300")
 
 def plot(f, ax, color):
     xs, ys = [], []
+    xcut = None
     for toks in (l.rstrip().split("\t") for l in open(f) if not l[0] == "#"):
         xs.append(float(toks[2]))
         ys.append(float(toks[3]))
+        if toks[0] == '22':
+            xcut = float(toks[2])
 
     aln = op.basename(f).split(".")[1]
     ax.plot(xs, ys, marker="o", linestyle="--", color=color, label=aln,
             markersize=4, linewidth=1.5,
             mec=color)
+    if 'bfast' == aln:
+        ax.plot([xcut, xcut], [0, 100], color=color)
 
 for i, f in enumerate(sys.argv[1:]):
     plot(f, ax, colors[i])
 
-plt.legend()
-plt.xlim(0, 10)
-plt.ylim(0, 80)
+plt.legend(loc='lower right')
+plt.xlim(0, 6)
+plt.ylim(0, 70)
 plt.xlabel("% reads outside target region")
 plt.ylabel("% reads inside target region")
 plt.show()
