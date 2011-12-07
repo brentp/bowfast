@@ -27,9 +27,9 @@ Notes
 
  + Other aligners may perform better after trimming.
 
- + novoalignCS is butt-slow, all other aligners, including BFAST run fairly
-   quickly. At least with the chosen parameters, novoalignCS, probably takes
-   about 20X more computing time than BFAST.
+ + the default for novoalignCS is for maximum sensitivity which is slow, it can be tuned
+   to be faster. All other aligners, including BFAST run fairly quickly. At least with the 
+   chosen parameters, novoalignCS, probably takes about 20X more computing time than BFAST.
 
  + There is no test here for the quality of the base-alignment--e.g.
    novoalignCS may do better at per-base qualities because it does quality
