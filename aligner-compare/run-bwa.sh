@@ -10,10 +10,10 @@
 source ./setup.sh
 FASTA=~/data/hg19.fa
 
-bwa aln -c -t $THREADS -l 20 -n 0.05 -k 2 $FASTA $WFQ > $OUT/$GROUP.sai
+bwa aln -q 15 -c -t $THREADS -l 22 -n 3 -O 4 -k 2 $FASTA $WFQ > $OUT/$GROUP.sai
 
 # bwa doesn't trim the quals after trimming the reads...
-bwa samse $FASTA $OUT/$GROUP.sai $WFQ -n 1 | \
+bwa samse $FASTA $OUT/$GROUP.sai $WFQ | \
     awk 'BEGIN{FS=OFS="\t"}
          ($1 ~ /^@/){ print $0} 
          ($1 !~ /^@/){ $11 = substr($11, 0, length($10)); print $0}' | \

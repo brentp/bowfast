@@ -28,7 +28,8 @@ for db in $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa; do
     rm -f logs/${i}.shrimper.out 
     rm -f logs/${i}.shrimper.err
     echo "gmapper-cs --fastq --bfast \
-        --un $OUT/${GROUP}.shrimp.${i}.un -N $THREADS --single-best-mapping \
+        --threads $THREADS --single-best-mapping --strata \
+        -x -25 -i -20 \
         $BFQ $db \
           > $OUT/$GROUP.${i}.shrimp.sam" \
          | bsub -J shrimper.${i} -n $THREADS -e logs/${i}.shrimper.err \
@@ -38,7 +39,9 @@ done
 exit;
 DONE
 mergesam --threads $THREADS \
+    --max-alignments 1 \
+    --all-contigs \
      --single-best-mapping --sam ${BFQ} $OUT/${GROUP}.*.shrimp.sam \
-     | samtools view -bS -F 4 - > $OUT/${GROUP}.shrimp.unsorted.bam
-samtools sort ${OUT}/${GROUP}.shrimp.unsorted.bam ${OUT}/${GROUP}.shrimp
-samtools index ${OUT}/${GROUP}.shrimp.bam
+     | samtools view -bSF 4 - > $OUT/${GROUP}.shrimp.unsorted.bam
+samtools sort ${OUT}/${GROUP}.shrimp.unsorted.bam ${OUT}/${GROUP}.shrimp-x
+#samtools index ${OUT}/${GROUP}.shrimp.bam
