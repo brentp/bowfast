@@ -10,9 +10,9 @@
 source ./setup.sh
 FASTA=~/data/hg19.fa
 
-bwa aln -q 25 -c -t $THREADS -l 22 -n 5 -k 1 $FASTA $WFQ > $OUT/$GROUP.sai
+bwa aln -q 28 -c -t $THREADS -l 22 -n 5 -k 1 $FASTA $WFQ > $OUT/$GROUP.sai
 
-# bwa doesn't trim the quals after trimming the reads...
+# bwa doesn't trim the quals after trimming the reads use awk to correct.
 bwa samse $FASTA $OUT/$GROUP.sai $WFQ -n 1 | \
     awk 'BEGIN{FS=OFS="\t"}
          ($1 ~ /^@/){ print $0} 
