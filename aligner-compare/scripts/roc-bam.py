@@ -21,7 +21,7 @@ total_reads = float(int(sys.argv[3]))
 
 on_target = counter(nopen('| samtools view %s -L %s -F 4' % (f_bam, f_region)))
 off_target = counter(nopen('| intersectBed -abam %s -b \
-                    data/regions.merged.bed -wa -v | samtools view - -F 4' % f_bam))
+                    %s -wa -v | samtools view - -F 4' % (f_bam, f_region)))
 
 tot_on_target = on_target.copy()
 tot_off_target = off_target.copy()
