@@ -15,7 +15,7 @@ for i, line in enumerate(open(fq)):
     elif mod == 1: # cseq
         seq.write(line)
     elif mod == 3:
-        print >>quals, " ".join((str(ord(q) - 33) for q in line.rstrip("\r\n")))
+        print >>quals, " ".join((str(ord(q) - 31) for q in line.rstrip("\r\n")))
 
 seq.close(); quals.close()
 print >>sys.stderr, "wrote %s, %s" % (quals.name, seq.name)

@@ -20,6 +20,7 @@ SPREFIX=$(basename $FASTA .fa).shrimp.cs
 ##python $SHRIMP_FOLDER/utils/split-db.py --dest-dir $(dirname $FASTA) --ram-size $RAM --prefix $SPREFIX $FASTA
 ##python $SHRIMP_FOLDER/utils/project-db.py --dest-dir $(dirname $FASTA) \
 ##    --shrimp-mode cs $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa
+THREADS=11
 
 i=0
 <<DONE
@@ -33,7 +34,8 @@ for db in $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa; do
         $BFQ $db \
           > $OUT/$GROUP.${i}.shrimp.sam" \
          | bsub -J shrimper.${i} -n $THREADS -e logs/${i}.shrimper.err \
-                 -o logs/${i}.shrimper.out -R "rusage[mem=15000]"
+                 -o logs/${i}.shrimper.out -R "rusage[mem=15000]" \
+                 -R "span[hosts=1]"
 
 done
 exit;
@@ -43,6 +45,6 @@ mergesam --threads $THREADS \
     --strata \
     --all-contigs \
     --sam ${BFQ} $OUT/${GROUP}.*.shrimp.sam \
-     | samtools view -bSF 4 - > $OUT/${GROUP}.shrimp-x.bam
+     | samtools view -bSF 4 - > $OUT/${GROUP}.shrimp.bam
 #samtools sort ${OUT}/${GROUP}.shrimp.unsorted.bam ${OUT}/${GROUP}.shrimp-x
 #samtools index ${OUT}/${GROUP}.shrimp.bam
