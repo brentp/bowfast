@@ -1,9 +1,25 @@
 ColorSpace Aligners ROC
 =======================
 
-This is on real *solid 3* data from a targetted resequencing project.
+This is on real *solid 3* / *5500* data from a targetted resequencing project.
 We can assess accuracy by wether a read falls within the target region.
-I will have *solid 5500* data shortly, at which time I'll re-run.
+
+Solid-5500
+==========
+
+.. image:: https://raw.github.com/brentp/bowfast/master/aligner-compare/images/solid-5500.png
+
+Notes
+-----
+
+ + bowtie does much better on high-quality reads. (-v 1 -m 1)
+
+ + BFAST still performs the best, this time at with a reasonable mapping
+   quality cutoff at 10 (different from solid 3).
+
+ + I can't get novoalign or shrimp to map more reads.
+
+ + Haven't tried BWA/MAQ yet.
 
 Solid-3
 =======
