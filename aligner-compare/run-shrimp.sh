@@ -21,6 +21,15 @@ SPREFIX=$(basename $FASTA .fa).shrimp.cs
 ##python $SHRIMP_FOLDER/utils/project-db.py --dest-dir $(dirname $FASTA) \
 ##    --shrimp-mode cs $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa
 
+
+<<PARALLEL
+mkdir logs;
+for fa in /notbackedup/brentp/hg19/hg19-12gb-*.fa ; do 
+    echo "python utils/project-db.py --dest-dir /notbackedup/brentp/hg19/ --shrimp-mode cs $fa" \
+               | bsub -J $(basename $fa) -e logs/$(basename $fa).err -o logs/$(basename $fa).out; 
+done
+PARALLEL
+
 i=0
 <<DONE
 for db in $(dirname $FASTA)/${SPREFIX}-${RAM}*.fa; do
